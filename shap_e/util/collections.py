@@ -13,7 +13,7 @@ class AttrDict(OrderedDict):
 
     # pylint: disable=super-init-not-called
     def __init__(self, *args, **kwargs):
-        if len(args) == 0:
+        if not args:
             for key, value in kwargs.items():
                 self.__setitem__(key, value)
         else:
@@ -83,7 +83,7 @@ class AttrDict(OrderedDict):
 
         if strip:
             return {k: _dump(v) for k, v in self.items() if not k.startswith("_")}
-        return {k: _dump(v if not k.startswith("_") else repr(v)) for k, v in self.items()}
+        return {k: _dump(repr(v) if k.startswith("_") else v) for k, v in self.items()}
 
     def map(
         self,

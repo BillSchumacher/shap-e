@@ -80,7 +80,7 @@ class MultiviewTransformerEncoder(VectorEncoder):
             ),
         )
         self.patch_emb = nn.Conv2d(
-            in_channels=3 if not use_depth else 4,
+            in_channels=4 if use_depth else 3,
             out_channels=width,
             kernel_size=patch_size,
             stride=patch_size,
@@ -124,9 +124,7 @@ class MultiviewTransformerEncoder(VectorEncoder):
         h = self.backbone(h)
         h = self.ln_post(h)
         h = h[:, self.n_ctx :]
-        h = self.output_proj(h).flatten(1)
-
-        return h
+        return self.output_proj(h).flatten(1)
 
     def views_to_tensor(self, views: Union[torch.Tensor, List[List[Image.Image]]]) -> torch.Tensor:
         """
@@ -184,18 +182,17 @@ class MultiviewTransformerEncoder(VectorEncoder):
             return cameras
         outer_batch = []
         for inner_list in cameras:
-            inner_batch = []
-            for camera in inner_list:
-                inner_batch.append(
-                    np.array(
-                        [
-                            *camera.x,
-                            *camera.y,
-                            *camera.z,
-                            *camera.origin,
-                            camera.x_fov,
-                        ]
-                    )
+            inner_batch = [
+                np.array(
+                    [
+                        *camera.x,
+                        *camera.y,
+                        *camera.z,
+                        *camera.origin,
+                        camera.x_fov,
+                    ]
                 )
+                for camera in inner_list
+            ]
             outer_batch.append(np.stack(inner_batch, axis=0))
         return torch.from_numpy(np.stack(outer_batch, axis=0)).float()
